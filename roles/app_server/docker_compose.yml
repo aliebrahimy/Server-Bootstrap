@@ -1,0 +1,19 @@
+---
+- name: Install required packages
+  ansible.builtin.package:
+    name:
+      - docker
+      - python3-pip
+    state: present
+
+- name: Install Docker Compose via pip
+  ansible.builtin.pip:
+    name: docker-compose
+    executable: pip3
+
+- name: Enable and start Docker
+  ansible.builtin.service:
+    name: docker
+    state: started
+    enabled: true
+

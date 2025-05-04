@@ -1,0 +1,61 @@
+---
+- name: Bootstrap metadata and update records
+  hosts: localhost
+  gather_facts: false
+  vars:
+    target_ip: "192.168.227.119"
+    ansible_user: "a.ebrahimi"
+    server_description: "OnlineCard API"
+  tasks:
+    - name: Generate and register server metadata
+      ansible.builtin.command: ./update_server_list.sh {{ target_ip }} {{ ansible_user }} "{{ server_description }}"
+      args:
+        chdir: "{{ playbook_dir }}"
+      register: server_script_output
+
+    - name: Parse server output to variables
+      ansible.builtin.set_fact:
+        server_data: "{{ dict(server_script_output.stdout_lines | map('split', '=') | map('map', 'trim') | list) }}"
+
+    - name: Debug info
+      ansible.builtin.debug:
+        msg: "Hostname is {{ server_data.hostname }} and ID is {{ server_data.id }}"
+
+    - name: Update SSH config using script
+      ansible.builtin.command: ./update_ssh_config.sh "{{ server_description }}" "{{ target_ip }}" "{{ ansible_user }}"
+      args:
+        chdir: "{{ playbook_dir }}"
+
+- name: Set hostname on target server
+  hosts: all
+  gather_facts: true
+  become: true
+  tasks:
+    - name: Set hostname
+      ansible.builtin.hostname:
+        name: "{{ hostvars['localhost']['server_data']['hostname'] }}"
+    
+ - name: Install selected service based on Survey input
+  hosts: all
+  become: true
+  tasks:
+    - name: Include NGINX installation if selected
+      include_role:
+        name: loadbalancer/nginx
+      when: service_template == 'nginx'
+
+    - name: Include HAProxy installation if selected
+      include_role:
+        name: loadbalancer/haproxy
+      when: service_template == 'haproxy'
+
+    - name: Include Redis installation if selected
+      include_role:
+        name: redis/main
+      when: service_template == 'redis'
+
+    - name: Include Docker Compose installation if selected
+      include_role:
+        name: app_server/docker_compose
+      when: service_template == 'app_server'
+

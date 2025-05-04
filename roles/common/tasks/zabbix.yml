@@ -1,0 +1,12 @@
+---
+- name: Install Zabbix Agent
+  ansible.builtin.package:
+    name: zabbix-agent
+    state: present
+
+- name: Enable and start Zabbix agent
+  ansible.builtin.service:
+    name: zabbix-agent
+    state: started
+    enabled: true
+

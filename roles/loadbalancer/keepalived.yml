@@ -1,0 +1,12 @@
+---
+- name: Install Keepalived
+  ansible.builtin.package:
+    name: keepalived
+    state: present
+
+- name: Enable and start Keepalived
+  ansible.builtin.service:
+    name: keepalived
+    state: started
+    enabled: true
+
